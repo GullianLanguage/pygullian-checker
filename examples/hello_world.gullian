@@ -1,17 +1,18 @@
 import std.io
 
-fun str.show(self: ptr[str]) : str {
-    io.puts(self)
+union Result[T, E] {
+    ok: T,
+    err: E
 }
 
-struct Vector[T] {
-    length: int,
-    items: ptr[T]
-}
+fun divide(a: int, b: int) : Result[int, str] {
+    if b == 0 {
+        return Result[int, str] { "ZeroDivisionError: Divide by zero"}
+    }
 
+    return Result[int, str] { a / b }
+}
 
 fun main() : int {
-    let vector = Vector[str] { 0, &"hello"  }
-
-    io.puts(vector.items.show())
+    let result = divide(40, 60)
 }

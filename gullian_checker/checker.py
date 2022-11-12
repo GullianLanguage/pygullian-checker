@@ -41,6 +41,27 @@ class Checker:
 
         struct_literal.arguments = [self.check_expression(argument) for argument in struct_literal.arguments]
 
+        # If its type is a union, treat it like a union literal
+        if type(type_.declaration) is UnionDeclaration:
+            if len(struct_literal.arguments) > 1:
+                raise IndexError(f"too many fields to union literal '{struct_literal.format}', expected 1, got {len(struct_literal.arguments)}. at line {struct_literal.line}, in module {self.module.name}")
+            elif len(struct_literal.arguments) < 1:
+                raise IndexError(f"too few fields to union literal '{struct_literal.format}', expected 1, got {len(struct_literal.arguments)}. at line {struct_literal.line}, in module {self.module.name}")
+            
+            argument = struct_literal.arguments[0]
+            any_type_compatible = False
+
+            for field_name, field_type in type_.fields:
+                if self.check_type_compatibility(argument.type, field_type):
+                    any_type_compatible = True
+                    break
+            
+            if not any_type_compatible:
+                raise NameError(f"type mismatch. union literal '{struct_literal.format}' expects: {', '.join(type_.format for type_ in type_.fields)}, got {argument.type.format}. at line {argument.line}, in module {self.module.name}")
+
+            return Typed(struct_literal, type_)
+        
+        # Treat like a normal union literal
         if len(struct_literal.arguments) > len(type_.fields):
             raise IndexError(f"too many fields to struct literal '{struct_literal.format}', expected {len(type_.fields)}, got {len(struct_literal.arguments)}. at line {struct_literal.line}, in module {self.module.name}")
         elif len(struct_literal.arguments) < len(type_.fields):
@@ -88,6 +109,20 @@ class Checker:
 
         return Typed(attribute, variable_type_fields[attribute.right])
     
+    def check_binary_operator(self, binary_operator: BinaryOperator):
+        binary_operator.left = self.check_expression(binary_operator.left)
+        binary_operator.right = self.check_expression(binary_operator.right)
+
+        if not self.check_type_compatibility(binary_operator.left.type, binary_operator.right.type):
+            raise TypeError(f'types for {binary_operator.format} must be compatible. expected {binary_operator.left.type.format}, got {binary_operator.right.type.format}. at line {binary_operator.line}, in module {self.module.name}')
+
+        if binary_operator.operator.kind in TOKENKIND_LOGICOPERATORS:
+            return Typed(binary_operator, BOOL)
+        elif binary_operator.operator.kind in TOKENKIND_NUMERICOPERATORS:
+            return Typed(binary_operator, binary_operator.left.type)
+
+        raise NotImplementedError(f"bug(checker): checking for binary operator {binary_operator.format} is not implemented yet. at line {binary_operator.line}, in module {self.module.name}") 
+
     def check_unary_operator(self, unary_operator: UnaryOperator):
         unary_operator.expression = self.check_expression(unary_operator.expression)
 
@@ -120,6 +155,8 @@ class Checker:
             return self.check_call(expression)
         elif type(expression) is UnaryOperator:
             return self.check_unary_operator(expression)
+        elif type(expression) is BinaryOperator:
+            return self.check_binary_operator(expression)
         
         raise NotImplementedError(f"bug(checker): checking for {expression.format} is not implemented yet. at line {expression.line}, in module {self.module.name}")
     
@@ -128,6 +165,20 @@ class Checker:
         self.context.variables[variable_declaration.name.format] = variable_declaration.value.type
 
         return variable_declaration
+    
+    def check_if(self, if_: If):
+        if_.condition = self.check_expression(if_.condition)
+        if_.true_body = self.check_body(if_.true_body)
+
+        if if_.false_body:
+            if_.false_body = self.check_body(if_.false_body)
+        
+        return if_
+    
+    def check_return(self, return_: Return):
+        return_.value = self.check_expression(return_.value)
+
+        return return_
 
     def check_body(self, body: Body):
         def check(ast: Ast):
@@ -135,6 +186,10 @@ class Checker:
                 return self.check_variable_declaration(ast)
             elif type(ast) is Call:
                 return self.check_call(ast)
+            elif type(ast) is If:
+                return self.check_if(ast)
+            elif type(ast) is Return:
+                return self.check_return(ast)
             
             raise NotImplementedError(f"bug(checker): checking for {ast.format} is not implemented yet. at line {ast.line}, in module {self.module.name}")
 
@@ -160,6 +215,21 @@ class Checker:
         self.module.imports[import_.module_name.rightest] = module
 
         return import_
+    
+    def check_union_declaration(self, union_declaration: UnionDeclaration):
+        # If union is generic we dont perform checking just store it
+        if union_declaration.generic:
+            generic_union_type = GenericType(union_declaration.name, union_declaration.generic, union_declaration, dict(), self.module)
+            self.module.types[generic_union_type.name] = generic_union_type
+
+            return generic_union_type
+        
+        union_declaration.fields = [(field_name, self.module.import_type(field_hint)) for field_name, field_hint in union_declaration.fields]
+        
+        union_type = Type(union_declaration.name, union_declaration.fields, dict(), union_declaration, self.module.name)
+        self.module.types[union_type.name] = union_type
+
+        return union_type
 
     def check_struct_declaration(self, struct_declaration: StructDeclaration):
         # If struct is generic we dont perform checking just store it
@@ -236,6 +306,8 @@ class Checker:
                 yield self.check_import(ast)
             elif type(ast) is StructDeclaration:
                 yield self.check_struct_declaration(ast)
+            elif type(ast) is UnionDeclaration:
+                yield self.check_union_declaration(ast)
             elif type(ast) is Extern:
                 yield self.check_extern(ast)
             elif type(ast) is FunctionDeclaration:
