@@ -2,6 +2,7 @@ import std.io
 
 struct Tag {
     text: str
+    tag: ptr[str]
 }
 
 fun Tag.show(self: Tag) : str {

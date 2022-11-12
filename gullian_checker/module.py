@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from gullian_parser.lexer import Name
-from gullian_parser.parser import Ast, TypeDeclaration, FunctionDeclaration, Attribute
+from gullian_parser.parser import Ast, TypeDeclaration, FunctionDeclaration, Attribute, Subscript
 
 @dataclass
 class Type:
@@ -70,6 +70,7 @@ BOOL = Type.new('bool')
 INT = Type.new('int')
 FLOAT = Type.new('float')
 STR = Type.new('str')
+PTR = Type.new('ptr')
 FUNCTION = Type.new('function')
 
 BASIC_TYPES = {
@@ -78,6 +79,7 @@ BASIC_TYPES = {
     'int': INT,
     'float': FLOAT,
     'str': STR,
+    'ptr': PTR,
     'function': FUNCTION
 }
 
@@ -148,7 +150,11 @@ class Module:
                 return self.imports[name.left].import_type(name.right)
             
             raise NameError(f'{name.left} is not an import of module {self.name}. at line {name.line}')
-        
+        elif type(name) is Subscript:
+            base_type = self.import_type(name.head)
+
+            return Subscript(base_type, tuple(self.import_type(item) for item in name.items))
+
         raise TypeError(f'{name} must be either Name, or Attribute. got {name}. at line {name.line}, in module {self.name}')
     
     def import_function(self, name: Name | Attribute):
