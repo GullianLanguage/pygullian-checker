@@ -16,6 +16,9 @@ class Type:
     def __repr__(self):
         return f'Type({self.name})'
     
+    def __hash__(self):
+        return hash((self.name, self.fields.values(), self.functions.values(), self.declaration))
+    
     def import_field(self, name: Name | Attribute):
         type_fields = dict(self.fields)
 
@@ -221,12 +224,13 @@ class Context:
 class Module:
     name: str
     types: dict[str, Type | GenericType]
+    anonymous_types: dict[str, Type]
     functions: dict[str, Function | GenericFunction]
     imports: dict[str, "Module"]
 
     @classmethod
     def new(cls, name: str):
-        return cls(name, dict(), dict(), dict())
+        return cls(name, dict(), dict(), dict(), dict())
 
     def import_type(self, name: Name | Attribute | Type):
         if type(name) is Type:
@@ -249,8 +253,11 @@ class Module:
             base_type = self.import_type(name.head)
 
             if type(base_type) is GenericType:
-                return base_type.apply_generic(tuple(self.import_type(item) for item in name.items))
-            
+                anonymous_type = base_type.apply_generic(tuple(self.import_type(item) for item in name.items))
+                self.anonymous_types[name] = anonymous_type
+
+                return anonymous_type
+
             if base_type is PTR:
                 if len(name.items) > 1:
                     raise IndexError(f"too many type parameters for {name.format}. expected 1, got {len(name.items)}. at line {name.line}, in module {self.name}")
