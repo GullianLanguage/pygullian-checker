@@ -132,6 +132,10 @@ class Checker:
 
         if unary_operator.operator.kind is TokenKind.Ampersand:
             return Typed(unary_operator, new_ptr_for(unary_operator.expression.type))
+        elif unary_operator.operator.kind is TokenKind.Plus:
+            return Typed(unary_operator, unary_operator.expression.type)
+        elif unary_operator.operator.kind is TokenKind.Minus:
+            return Typed(unary_operator, unary_operator.expression.type)
 
         raise NotImplementedError(f"bug(checker): checking for unary operator {unary_operator.format} is not implemented yet. at line {unary_operator.line}, in module {self.module.name}")
     
