@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import copy
+
 from gullian_parser.lexer import Name
 from gullian_parser.parser import Ast, TypeDeclaration, FunctionDeclaration, Attribute, Subscript
 
@@ -72,6 +74,24 @@ class GenericType:
     name: str
     parameters: tuple[str]
     declaration: TypeDeclaration
+    module: "Module"
+
+    def apply_generic(self, items: tuple[Type]):
+        parameters_items_dict = dict(zip(self.parameters, items))
+        declaration = copy.deepcopy(self.declaration)
+
+        def apply(type_hint: Name):
+            if type_hint is Subscript:
+                return self.module.import_type(Subscript(type_hint.head, tuple(apply(item) for item in type_hint.items)))
+
+            elif type_hint in self.parameters:
+                return parameters_items_dict[type_hint]
+
+            return self.module.import_type(type_hint)
+        
+        declaration.fields = [(field_name, apply(field_hint)) for field_name, field_hint in declaration.fields]
+
+        return Type(self.name, list(declaration.fields), dict(), declaration, self.module.name)
 
 VOID = Type.new('void')
 BOOL = Type.new('bool')
@@ -124,7 +144,7 @@ class Context:
             if name in self.functions:
                 return self.functions[name]
             
-            raise AttributeError(f"{name.left.format} is not a function of the current scope. at line {name.line}, in module {self.module.name}")
+            raise AttributeError(f"{name.format} is not a function of the current scope. at line {name.line}, in module {self.module.name}")
         elif type(name) is Attribute:
             if type(name.left) is Attribute:
                 return self.import_variable(name.left).import_function(name.right)
@@ -163,6 +183,9 @@ class Module:
             raise NameError(f'{name.left} is not an import of module {self.name}. at line {name.line}')
         elif type(name) is Subscript:
             base_type = self.import_type(name.head)
+
+            if type(base_type) is GenericType:
+                return base_type.apply_generic(tuple(self.import_type(item) for item in name.items))
 
             return Type(Subscript(base_type, tuple(self.import_type(item) for item in name.items)), base_type.fields, base_type.functions, base_type.declaration, base_type.module_name)
 

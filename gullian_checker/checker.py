@@ -171,7 +171,7 @@ class Checker:
     def check_struct_declaration(self, struct_declaration: StructDeclaration):
         # If struct is generic we dont perform checking just store it
         if struct_declaration.generic:
-            generic_struct_type = GenericType(struct_declaration.name, struct_declaration.generic, struct_declaration)
+            generic_struct_type = GenericType(struct_declaration.name, struct_declaration.generic, struct_declaration, self.module)
             self.module.types[generic_struct_type.name] = generic_struct_type
 
             return generic_struct_type

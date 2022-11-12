@@ -1,25 +1,15 @@
 import std.io
 
-fun ptr.print(self: ptr[str]) : str {
-
+struct Vector[T] {
+    length: int,
+    items: T
 }
 
-struct Tag {
-    text: str
-    tag: ptr[str]
+fun test[T](self: Vector[T]) : T {
 }
-
-fun Tag.show(self: Tag) : str {
-}
-
-struct Book {
-    title: str
-    tag: Tag
-}
-
 
 fun main() : int {
-    let book = Book { "alice", Tag { "hello", &"world" } }
+    let vector = Vector[int] { 0, 1}
 
-    io.puts(book.tag.tag.print())
+    io.puts(test[int]())
 }
