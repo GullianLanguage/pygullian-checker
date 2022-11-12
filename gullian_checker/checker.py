@@ -18,12 +18,15 @@ class Checker:
         elif type(right) is not Type:
             raise TypeError(f"right must be a Type, got {left}. at line {left.line}, in module {self.module.name}")
         
-        if type(left.name) is Subscript:
-            if left.name == right.name:
-                return True
+        if left is ANY:
+            return True
 
         if left == right:
             return True
+        
+        if type(left.name) is Subscript:
+            if left.name == right.name:
+                return True
 
         if left is PTR:
             if right is INT:
