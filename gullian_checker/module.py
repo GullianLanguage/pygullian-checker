@@ -59,6 +59,14 @@ class Typed:
     ast: Ast
     type: Type
 
+    @property
+    def line(self):
+        return self.ast.line
+    
+    @property
+    def format(self):
+        return self.ast.format
+
 @dataclass
 class GenericType:
     name: str

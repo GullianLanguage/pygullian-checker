@@ -35,6 +35,9 @@ class Checker:
         elif type(right) is not Type:
             raise TypeError(f"right must be a Type, got {left}. at line {left.line}, in module {self.module.name}")
         
+        if left == right:
+            return True
+
         if left is PTR:
             if right is INT:
                 return True
@@ -56,6 +59,10 @@ class Checker:
         elif len(struct_literal.arguments) < len(type_.fields):
             raise IndexError(f"too few fields to struct literal '{struct_literal.format}', expected {len(type_.fields)}, got {len(struct_literal.arguments)}. at line {struct_literal.line}, in module {self.module.name}")
         
+        for argument, (field_name, field_type) in zip(struct_literal.arguments, type_.fields):
+            if not self.check_type_compatibility(argument.type, field_type):
+                raise NameError(f"type mismatch. struct literal parameter '{field_name.format}' expects {field_type.format}, got {argument.type.format}. at line {argument.line}, in module {self.module.name}")
+
         return Typed(struct_literal, type_)
 
     def check_call(self, call: Call):
@@ -73,7 +80,7 @@ class Checker:
         call.arguments = [self.check_expression(argument) for argument in call.arguments]
 
         for argument, (parameter_name, parameter_type) in zip(call.arguments, function.head.parameters):
-            if self.check_type_compatibility(argument.type, parameter_type):
+            if not self.check_type_compatibility(argument.type, parameter_type):
                 raise NameError(f"type mismatch. parameter '{parameter_name.format}' expects {parameter_type.format}, got {argument.type.format}. at line {argument.line}, in module {self.module.name}")
 
         return Typed(call, function.declaration. head.return_hint)

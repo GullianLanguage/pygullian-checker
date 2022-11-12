@@ -6,7 +6,7 @@ fun ptr.print(self: ptr[str]) : str {
 
 struct Tag {
     text: str
-    tag: ptr[str]
+    tag: ptr
 }
 
 fun Tag.show(self: Tag) : str {
