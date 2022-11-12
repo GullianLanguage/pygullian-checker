@@ -1,0 +1,14 @@
+import std.sys
+
+union Result[T, E] {
+    ok: T,
+    err: E
+}
+
+fun Result.unwrap[T, E](self: Result[T, E]) : T {
+    if self.ok? {
+        return self.ok
+    }
+
+    sys.exit(-1)
+}
