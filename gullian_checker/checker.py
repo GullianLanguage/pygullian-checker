@@ -77,6 +77,7 @@ class Checker:
 
             return Typed(struct_literal, type_)
         
+        print(type_, type_.anonymous_functions, type_.declaration)
         # Treat like a normal union literal
         if len(struct_literal.arguments) > len(type_.fields):
             raise IndexError(f"too many fields to struct literal '{struct_literal.format}', expected {len(type_.fields)}, got {len(struct_literal.arguments)}. at line {struct_literal.line}, in module {self.module.name}")
@@ -266,14 +267,14 @@ class Checker:
     def check_union_declaration(self, union_declaration: UnionDeclaration):
         # If union is generic we dont perform checking just store it
         if union_declaration.generic:
-            generic_union_type = GenericType(union_declaration.name, union_declaration.generic, union_declaration, dict(), self.module)
+            generic_union_type = GenericType(union_declaration.name, union_declaration.generic, union_declaration, dict(), dict(), self.module)
             self.module.types[generic_union_type.name] = generic_union_type
 
             return generic_union_type
         
         union_declaration.fields = [(field_name, self.module.import_type(field_hint)) for field_name, field_hint in union_declaration.fields]
         
-        union_type = Type(union_declaration.name, union_declaration.fields, dict(), union_declaration, self.module.name)
+        union_type = Type(union_declaration.name, union_declaration.fields, dict(), dict(), union_declaration, self.module.name)
         self.module.types[union_type.name] = union_type
 
         return union_type
@@ -281,14 +282,14 @@ class Checker:
     def check_struct_declaration(self, struct_declaration: StructDeclaration):
         # If struct is generic we dont perform checking just store it
         if struct_declaration.generic:
-            generic_struct_type = GenericType(struct_declaration.name, struct_declaration.generic, struct_declaration, dict(), self.module)
+            generic_struct_type = GenericType(struct_declaration.name, struct_declaration.generic, struct_declaration, dict(), dict(), self.module)
             self.module.types[generic_struct_type.name] = generic_struct_type
 
             return generic_struct_type
         
         struct_declaration.fields = [(field_name, self.module.import_type(field_hint)) for field_name, field_hint in struct_declaration.fields]
         
-        struct_type = Type(struct_declaration.name, struct_declaration.fields, dict(), struct_declaration, self.module.name)
+        struct_type = Type(struct_declaration.name, struct_declaration.fields, dict(), dict(), struct_declaration, self.module.name)
         self.module.types[struct_type.name] = struct_type
 
         return struct_type
@@ -378,4 +379,4 @@ class Checker:
     
     @classmethod
     def new(cls, module: Module):
-        return cls(module, Context(module, module.imports, module.functions, set()))
+        return cls(module, Context(module, module.imports, module.functions, module.anonymous_functions, set()))
