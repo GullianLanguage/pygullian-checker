@@ -1,0 +1,28 @@
+extern fun strlen(string: str) : int
+extern fun sprintf(buffer: str, fmt: str, arg: any) : void
+
+import std.mem
+
+fun int.to_string(self: int) : str {
+    if self == 0 {
+        return "0"
+    }
+
+    let buffer: str = mem.malloc(256)
+
+    sprintf(buffer, "%i", self)
+
+    return buffer
+}
+
+fun float.to_string(self: float) : str {
+    if self == 0.0 {
+        return "0.0"
+    }
+
+    let buffer: str = mem.malloc(8)
+
+    sprintf(buffer, "%f", self)
+
+    return buffer
+}
