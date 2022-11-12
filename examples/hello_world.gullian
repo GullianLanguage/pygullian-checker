@@ -1,29 +1,13 @@
 import std.io
-import std.sys
+import std.err
+import std.fmt
 
-fun int.to_string(self: int) : str {
-
-}
-
-union Result[T, E] {
-    ok: T,
-    err: E
-}
-
-fun Result.unwrap[T, E](self: Result[T, E]) : T {
-    if self.ok? {
-        return self.ok
-    }
-
-    sys.exit(-1)
-}
-
-fun divide(a: int, b: int) : Result[int, str] {
+fun divide(a: int, b: int) : err.Result[int, str] {
     if b == 0 {
-        return Result[int, str] { "ZeroDivisionError: Divide by zero"}
+        return err.Result[int, str] { "ZeroDivisionError: Divide by zero"}
     }
 
-    return Result[int, str] { a / b }
+    return err.Result[int, str] { a / b }
 }
 
 fun main() : int {
