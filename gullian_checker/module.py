@@ -86,12 +86,15 @@ BASIC_TYPES = {
 @dataclass
 class Context:
     module: "Module"
-    variables: dict[str, Type]
+    variables: dict[str, "Type | Module"]
     functions: dict[str, FunctionDeclaration]
 
     @classmethod
     def new(cls):
         return cls(dict())
+    
+    def copy(self):
+        return type(self)(self.module, dict(self.variables), dict(self.functions))
     
     def import_variable(self, name: Name | Attribute):
         if type(name) is Name:

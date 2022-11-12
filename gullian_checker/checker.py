@@ -176,7 +176,8 @@ class Checker:
             return associated_function
 
         # Now check its body
-        function_declaration.body = self.check_body(function_declaration.body)
+        checker = Checker(self.module, self.context.copy())
+        function_declaration.body = checker.check_body(function_declaration.body)
         
         function = Function(function_declaration)
         self.module.functions[function_declaration.head.name] = function

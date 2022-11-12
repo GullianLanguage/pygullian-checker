@@ -15,7 +15,7 @@ struct Book {
 
 
 fun main() : int {
-    let book = Book { "alice", Tag { "hello" } }
+    let book = Book { "alice", Tag { "hello", "world" } }
 
     io.puts(book.tag.show())
 }
