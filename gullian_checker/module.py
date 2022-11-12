@@ -133,8 +133,12 @@ class GenericFunction:
         declaration.head.generic = []
 
         checker = Checker.new(self.module)
+        function = checker.check_function_declaration(declaration)
 
-        return checker.check_function_declaration(declaration)
+        # This is very hacky, fix later
+        declaration.head.generic = items
+
+        return function
 
 @dataclass
 class AssociatedFunction:
