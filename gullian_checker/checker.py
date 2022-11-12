@@ -8,6 +8,19 @@ from gullian_parser.parser import *
 from .module import *
 
 @dataclass
+class CheckedCall:
+    call: Call
+    function: Function | AssociatedFunction
+
+    @property
+    def line(self):
+        return self.call.line
+    
+    @property
+    def format(self):
+        return self.call.format
+
+@dataclass
 class Checker:
     module: Module
     context: Context
@@ -100,7 +113,7 @@ class Checker:
             if not self.check_type_compatibility(argument.type, parameter_type):
                 raise NameError(f"type mismatch. function '{call.format}' parameter '{parameter_name.format}' expects {parameter_type.format}, got {argument.type.format}. at line {argument.line}, in module {self.module.name}")
 
-        return Typed(call, function.declaration. head.return_hint)
+        return Typed(CheckedCall(call, function), function.declaration.head.return_hint)
     
     # NOTE: May cause issues, it only works for variables
     def check_attribute(self, attribute: Attribute):
