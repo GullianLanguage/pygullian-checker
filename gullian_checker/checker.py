@@ -28,6 +28,23 @@ class Function:
 class Checker:
     module: Module
     context: Context
+    
+    def check_type_compatibility(self, left: Type, right: Type, *, swap_order=True):
+        if type(left) is not Type:
+            raise TypeError(f"left must be a Type, got {left}. at line {left.line}, in module {self.module.name}")
+        elif type(right) is not Type:
+            raise TypeError(f"right must be a Type, got {left}. at line {left.line}, in module {self.module.name}")
+        
+        if left is PTR:
+            if right is INT:
+                return True
+            elif right is STR:
+                return True
+        
+        if swap_order:
+            return self.check_type_compatibility(right, left, swap_order=False)
+        
+        return False
 
     def check_struct_literal(self, struct_literal: StructLiteral):
         type_ =  self.module.import_type(struct_literal.name)
@@ -54,6 +71,10 @@ class Checker:
             raise IndexError(f"too few arguments to function '{call.format}', expected {len(function.declaration.head.parameters)}, got {len(call.arguments)}. at line {call.line}, in module {self.module.name}")
         
         call.arguments = [self.check_expression(argument) for argument in call.arguments]
+
+        for argument, (parameter_name, parameter_type) in zip(call.arguments, function.head.parameters):
+            if self.check_type_compatibility(argument.type, parameter_type):
+                raise NameError(f"type mismatch. parameter '{parameter_name.format}' expects {parameter_type.format}, got {argument.type.format}. at line {argument.line}, in module {self.module.name}")
 
         return Typed(call, function.declaration. head.return_hint)
     
