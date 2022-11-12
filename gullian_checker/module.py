@@ -152,6 +152,7 @@ FLOAT = Type.new('float')
 STR = Type.new('str')
 PTR = Type.new('ptr')
 FUNCTION = Type.new('function')
+ANY = Type.new('any')
 
 BASIC_TYPES = {
     'void': VOID,
@@ -160,7 +161,8 @@ BASIC_TYPES = {
     'float': FLOAT,
     'str': STR,
     'ptr': PTR,
-    'function': FUNCTION
+    'function': FUNCTION,
+    'any': ANY,
 }
 
 def new_ptr_for(type_: Type):
