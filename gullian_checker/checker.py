@@ -179,39 +179,42 @@ class Checker:
 
         return variable_declaration
     
-    def check_if(self, if_: If):
+    def check_if(self, if_: If, expected_return_type: Type):
         if_.condition = self.check_expression(if_.condition)
 
         # Add guard
         if type(if_.condition.ast) is TestGuard:
             self.context.guards.add(if_.condition.ast.expression)
 
-        if_.true_body = self.check_body(if_.true_body)
+        if_.true_body = self.check_body(if_.true_body, expected_return_type)
 
         # Remove guard
         if type(if_.condition.ast) is TestGuard:
             self.context.guards.remove(if_.condition.ast.expression)
 
         if if_.false_body:
-            if_.false_body = self.check_body(if_.false_body)
+            if_.false_body = self.check_body(if_.false_body, expected_return_type)
         
         return if_
     
-    def check_return(self, return_: Return):
+    def check_return(self, return_: Return, expected_return_type: Type):
         return_.value = self.check_expression(return_.value)
+
+        if not self.check_type_compatibility(return_.value.type, expected_return_type):
+            raise TypeError(f"type mismatch. return {return_.format} expects type {expected_return_type.format}, got {return_.value.type.format}. at line {return_.line}, in module {self.module.name}")
 
         return return_
 
-    def check_body(self, body: Body):
+    def check_body(self, body: Body, expected_return_type: Type):
         def check(ast: Ast):
             if type(ast) is VariableDeclaration:
                 return self.check_variable_declaration(ast)
             elif type(ast) is Call:
                 return self.check_call(ast)
             elif type(ast) is If:
-                return self.check_if(ast)
+                return self.check_if(ast, expected_return_type)
             elif type(ast) is Return:
-                return self.check_return(ast)
+                return self.check_return(ast, expected_return_type)
             
             raise NotImplementedError(f"bug(checker): checking for {ast.format} is not implemented yet. at line {ast.line}, in module {self.module.name}")
 
@@ -311,7 +314,7 @@ class Checker:
                 checker.context.variables[parameter_name] = parameter_type
             
             # Now check its body
-            function_declaration.body = checker.check_body(function_declaration.body)
+            function_declaration.body = checker.check_body(function_declaration.body, function_declaration.head.return_hint)
 
             # And finnaly submit it back
             associated_function = AssociatedFunction(associated_type, function_declaration)
@@ -326,7 +329,7 @@ class Checker:
             checker.context.variables[parameter_name] = parameter_type
         
         # Now check its body
-        function_declaration.body = checker.check_body(function_declaration.body)
+        function_declaration.body = checker.check_body(function_declaration.body, function_declaration.head.return_hint)
         
         # And finnaly submit it back
         function = Function(function_declaration)
