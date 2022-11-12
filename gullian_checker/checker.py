@@ -53,6 +53,9 @@ class Checker:
             function = self.context.import_function(Subscript(call.name, tuple(self.module.import_type(hint) for hint in call.generic)))
         else:
             function = self.context.import_function(call.name)
+        
+            if type(function) is GenericFunction:
+                raise TypeError(f"This function is generic, you must pass its type arguments in '{call.format}'. at line {call.line}, in module {self.module.name}")
 
         if type(function) is AssociatedFunction:
             if type(call.name) is Attribute:
@@ -157,7 +160,7 @@ class Checker:
     def check_struct_declaration(self, struct_declaration: StructDeclaration):
         # If struct is generic we dont perform checking just store it
         if struct_declaration.generic:
-            generic_struct_type = GenericType(struct_declaration.name, struct_declaration.generic, struct_declaration, self.module)
+            generic_struct_type = GenericType(struct_declaration.name, struct_declaration.generic, struct_declaration, dict(), self.module)
             self.module.types[generic_struct_type.name] = generic_struct_type
 
             return generic_struct_type
@@ -184,6 +187,15 @@ class Checker:
     def check_function_declaration(self, function_declaration: FunctionDeclaration):
         # If function is generic, ignore for now
         if function_declaration.head.generic:
+            # Check and assign the associated function
+            if type(function_declaration.head.name) is Attribute:
+                associated_type = self.module.import_type(function_declaration.head.name.left)
+                associated_function = GenericFunction(function_declaration.head.generic, AssociatedFunction(associated_type, function_declaration), self.module)
+                
+                associated_type.functions[function_declaration.head.name.right] = associated_function
+
+                return associated_function
+            
             generic_function = GenericFunction(function_declaration.head.generic, function_declaration, self.module)
             self.module.functions[function_declaration.head.name] = generic_function
 

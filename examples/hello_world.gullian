@@ -8,6 +8,10 @@ struct Tag[T] {
     value: T
 }
 
+fun Tag.show[T](self: Tag[T]) : str {
+    io.puts(self.value)
+}
+
 struct Vector[T] {
     length: int,
     items: Tag[T]
@@ -20,5 +24,5 @@ fun test[T](self: Vector[T]) : T {
 fun main() : int {
     let vector = Vector[str] { 0, Tag[str] { "hello" }  }
 
-    io.puts(vector.items.value.show())
+    io.puts(vector.items.show[str]())
 }

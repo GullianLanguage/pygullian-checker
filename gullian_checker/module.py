@@ -79,6 +79,7 @@ class GenericType:
     name: str
     parameters: tuple[str]
     declaration: TypeDeclaration
+    functions: dict[Name, FunctionDeclaration]
     module: "Module"
 
     def apply_generic(self, items: tuple[Type]):
@@ -96,7 +97,7 @@ class GenericType:
         
         declaration.fields = [(field_name, apply(field_hint)) for field_name, field_hint in declaration.fields]
 
-        return Type(self.name, list(declaration.fields), dict(), declaration, self.module.name)
+        return Type(self.name, list(declaration.fields), dict(self.functions), declaration, self.module.name)
 
 @dataclass
 class GenericFunction:
@@ -204,7 +205,14 @@ class Context:
                 return self.variables[name.left].import_function(name.right)
             
             raise AttributeError(f"{name.left.format} is not an variable of the current scope. at line {name.line}, in module {self.module.name}")
-        
+        elif type(name) is Subscript:
+            base_function = self.import_function(name.head)
+
+            if type(base_function) is GenericFunction:
+                return base_function.apply_generic(name.items)
+            
+            raise TypeError(f"function '{base_function.head.format}' is not a generic function. at line {name.line}, in module {self.name}")
+
         return self.module.import_function(name)
 
 @dataclass
@@ -254,7 +262,7 @@ class Module:
             elif name.left in self.types:
                 return self.types[name.left].import_function(name.right)
             
-            raise NameError(f'{name.left} is not an import of module {self.name}. at line {name.line}')
+            raise NameError(f'{name.left.format} is not an import of module {self.name}. at line {name.line}')
         elif type(name) is Subscript:
             base_function = self.import_function(name.head)
 
