@@ -10,7 +10,9 @@ union Result[T, E] {
 }
 
 fun Result.unwrap[T, E](self: Result[T, E]) : T {
-    io.puts(self.err)
+    if self.err? {
+        io.puts(self.err)
+    }
 }
 
 fun divide(a: int, b: int) : Result[int, str] {

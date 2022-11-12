@@ -106,6 +106,10 @@ class Checker:
 
         if attribute.right not in variable_type_fields:
             raise NameError(f'{attribute.right.format} is not a field of type {variable_type.name.format}, at line {attribute.line}, in module {self.module.name}')
+        
+        if type(variable_type.declaration) is UnionDeclaration:
+            if attribute not in self.context.guards:
+                raise AttributeError(f"Acessing union field '{attribute.format}' directly is not allowed, you must check if its initialized first. at line {attribute.line}, in module {self.module.name}")
 
         return Typed(attribute, variable_type_fields[attribute.right])
     
@@ -130,7 +134,10 @@ class Checker:
             return Typed(unary_operator, new_ptr_for(unary_operator.expression.type))
 
         raise NotImplementedError(f"bug(checker): checking for unary operator {unary_operator.format} is not implemented yet. at line {unary_operator.line}, in module {self.module.name}")
-
+    
+    def check_test_guard(self, test_guard: TestGuard):
+        return Typed(test_guard, BOOL)
+    
     def check_expression(self, expression: Expression):
         if type(expression) is Literal:
             if type(expression.value) is str:
@@ -157,6 +164,8 @@ class Checker:
             return self.check_unary_operator(expression)
         elif type(expression) is BinaryOperator:
             return self.check_binary_operator(expression)
+        elif type(expression) is TestGuard:
+            return self.check_test_guard(expression)
         
         raise NotImplementedError(f"bug(checker): checking for {expression.format} is not implemented yet. at line {expression.line}, in module {self.module.name}")
     
@@ -168,7 +177,16 @@ class Checker:
     
     def check_if(self, if_: If):
         if_.condition = self.check_expression(if_.condition)
+
+        # Add guard
+        if type(if_.condition.ast) is TestGuard:
+            self.context.guards.add(if_.condition.ast.expression)
+
         if_.true_body = self.check_body(if_.true_body)
+
+        # Remove guard
+        if type(if_.condition.ast) is TestGuard:
+            self.context.guards.remove(if_.condition.ast.expression)
 
         if if_.false_body:
             if_.false_body = self.check_body(if_.false_body)
@@ -331,4 +349,4 @@ class Checker:
     
     @classmethod
     def new(cls, module: Module):
-        return cls(module, Context(module, module.imports, module.functions))
+        return cls(module, Context(module, module.imports, module.functions, set()))

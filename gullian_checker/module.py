@@ -125,7 +125,7 @@ class GenericFunction:
         declaration.head.generic = []
 
         checker = Checker.new(self.module)
-        
+
         return checker.check_function_declaration(declaration)
 
 @dataclass
@@ -171,13 +171,10 @@ class Context:
     module: "Module"
     variables: dict[str, "Type | Module"]
     functions: dict[str, FunctionDeclaration]
+    guards: set[Attribute]
 
-    @classmethod
-    def new(cls):
-        return cls(dict())
-    
     def copy(self):
-        return type(self)(self.module, dict(self.variables), dict(self.functions))
+        return type(self)(self.module, dict(self.variables), dict(self.functions), set())
     
     def import_variable(self, name: Name | Attribute):
         if type(name) is Name:
