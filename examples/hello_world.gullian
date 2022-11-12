@@ -4,7 +4,7 @@ import std.fmt
 
 fun divide(a: int, b: int) : err.Result[int, str] {
     if b == 0 {
-        return err.Result[int, str] { "ZeroDivisionError: Divide by zero"}
+        return err.Result[int, str] { "ZeroDivisionError: Divide by zero" }
     }
 
     return err.Result[int, str] { a / b }
