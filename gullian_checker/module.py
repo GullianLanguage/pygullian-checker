@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import copy
 
 from gullian_parser.lexer import Name
-from gullian_parser.parser import Ast, TypeDeclaration, FunctionDeclaration, Attribute, Subscript
+from gullian_parser.parser import Ast, TypeDeclaration, StructDeclaration, FunctionDeclaration, Attribute, Subscript
 
 @dataclass
 class Type:
@@ -163,6 +163,9 @@ BASIC_TYPES = {
     'function': FUNCTION
 }
 
+def new_ptr_for(type_: Type):
+    return Type(Subscript(PTR, (type_, )), type_.fields, type_.functions, None, type_.module_name)
+
 @dataclass
 class Context:
     module: "Module"
@@ -211,7 +214,7 @@ class Context:
             if type(base_function) is GenericFunction:
                 return base_function.apply_generic(name.items)
             
-            raise TypeError(f"function '{base_function.head.format}' is not a generic function. at line {name.line}, in module {self.name}")
+            raise TypeError(f"function '{base_function.head.format}' is not a generic function. at line {name.line}, in module {self.module.name}")
 
         return self.module.import_function(name)
 
@@ -248,8 +251,14 @@ class Module:
 
             if type(base_type) is GenericType:
                 return base_type.apply_generic(tuple(self.import_type(item) for item in name.items))
-
-            return Type(Subscript(base_type, tuple(self.import_type(item) for item in name.items)), base_type.fields, base_type.functions, base_type.declaration, base_type.module_name)
+            
+            if base_type is PTR:
+                if len(name.items) > 1:
+                    raise IndexError(f"too many type parameters for {name.format}. expected 1, got {len(name.items)}. at line {name.line}, in module {self.name}")
+                
+                return new_ptr_for(self.import_type(name.items[0]))
+            
+            raise TypeError(f"The type {base_type.name.format} is not generic, got {name.format}. at line {name.line}, in module {self.name}")
 
         raise TypeError(f'{name} must be either Name, or Attribute. got {name}. at line {name.line}, in module {self.name}')
     

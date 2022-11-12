@@ -18,6 +18,10 @@ class Checker:
         elif type(right) is not Type:
             raise TypeError(f"right must be a Type, got {left}. at line {left.line}, in module {self.module.name}")
         
+        if type(left.name) is Subscript:
+            if left.name == right.name:
+                return True
+
         if left == right:
             return True
 
@@ -88,7 +92,7 @@ class Checker:
         unary_operator.expression = self.check_expression(unary_operator.expression)
 
         if unary_operator.operator.kind is TokenKind.Ampersand:
-            return Typed(unary_operator, PTR)
+            return Typed(unary_operator, new_ptr_for(unary_operator.expression.type))
 
         raise NotImplementedError(f"bug(checker): checking for unary operator {unary_operator.format} is not implemented yet. at line {unary_operator.line}, in module {self.module.name}")
 

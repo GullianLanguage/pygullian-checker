@@ -1,28 +1,17 @@
 import std.io
 
-fun str.show(self: str) : str {
-
-}
-
-struct Tag[T] {
-    value: T
-}
-
-fun Tag.show[T](self: Tag[T]) : str {
-    io.puts(self.value)
+fun str.show(self: ptr[str]) : str {
+    io.puts(self)
 }
 
 struct Vector[T] {
     length: int,
-    items: Tag[T]
+    items: ptr[T]
 }
 
-fun test[T](self: Vector[T]) : T {
-    io.puts(self.items)
-}
 
 fun main() : int {
-    let vector = Vector[str] { 0, Tag[str] { "hello" }  }
+    let vector = Vector[str] { 0, &"hello"  }
 
-    io.puts(vector.items.show[str]())
+    io.puts(vector.items.show())
 }
