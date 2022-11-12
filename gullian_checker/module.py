@@ -153,7 +153,7 @@ class Module:
         elif type(name) is Subscript:
             base_type = self.import_type(name.head)
 
-            return Subscript(base_type, tuple(self.import_type(item) for item in name.items))
+            return Type(Subscript(base_type, tuple(self.import_type(item) for item in name.items)), base_type.fields, base_type.functions, base_type.declaration, base_type.module_name)
 
         raise TypeError(f'{name} must be either Name, or Attribute. got {name}. at line {name.line}, in module {self.name}')
     
