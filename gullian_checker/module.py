@@ -253,7 +253,7 @@ class Module:
     imports: dict[str, "Module"]
 
     @classmethod
-    def new(cls, name: str):
+    def new(cls, name: str='main'):
         return cls(name, dict(), dict(), dict(), dict(), dict())
 
     def import_type(self, name: Name | Attribute | Type):
