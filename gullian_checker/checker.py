@@ -8,23 +8,6 @@ from gullian_parser.parser import *
 from .module import *
 
 @dataclass
-class AssociatedFunction:
-    associated_type: Type
-    declaration: FunctionDeclaration
-
-    @property
-    def head(self):
-        return self.declaration.head
-
-@dataclass
-class Function:
-    declaration: FunctionDeclaration
-
-    @property
-    def head(self):
-        return self.declaration.head
-    
-@dataclass
 class Checker:
     module: Module
     context: Context
@@ -61,12 +44,15 @@ class Checker:
         
         for argument, (field_name, field_type) in zip(struct_literal.arguments, type_.fields):
             if not self.check_type_compatibility(argument.type, field_type):
-                raise NameError(f"type mismatch. struct literal parameter '{field_name.format}' expects {field_type.format}, got {argument.type.format}. at line {argument.line}, in module {self.module.name}")
+                raise NameError(f"type mismatch. struct literal '{struct_literal.format}' parameter '{field_name.format}' expects {field_type.format}, got {argument.type.format}. at line {argument.line}, in module {self.module.name}")
 
         return Typed(struct_literal, type_)
 
     def check_call(self, call: Call):
-        function = self.context.import_function(call.name)
+        if call.generic:
+            function = self.context.import_function(Subscript(call.name, tuple(self.module.import_type(hint) for hint in call.generic)))
+        else:
+            function = self.context.import_function(call.name)
 
         if type(function) is AssociatedFunction:
             if type(call.name) is Attribute:
@@ -81,7 +67,7 @@ class Checker:
 
         for argument, (parameter_name, parameter_type) in zip(call.arguments, function.head.parameters):
             if not self.check_type_compatibility(argument.type, parameter_type):
-                raise NameError(f"type mismatch. parameter '{parameter_name.format}' expects {parameter_type.format}, got {argument.type.format}. at line {argument.line}, in module {self.module.name}")
+                raise NameError(f"type mismatch. function '{call.format}' parameter '{parameter_name.format}' expects {parameter_type.format}, got {argument.type.format}. at line {argument.line}, in module {self.module.name}")
 
         return Typed(call, function.declaration. head.return_hint)
     
@@ -116,7 +102,7 @@ class Checker:
 
         if type(expression) is Name:
             if expression in self.context.variables:
-                return self.context.variables[expression]
+                return Typed(expression, self.context.variables[expression])
             
             raise NameError(f"{expression.format} is not a variable. at line {expression.line}, in module {self.module.name}")
         elif type(expression) is Attribute:
@@ -198,7 +184,10 @@ class Checker:
     def check_function_declaration(self, function_declaration: FunctionDeclaration):
         # If function is generic, ignore for now
         if function_declaration.head.generic:
-            return function_declaration
+            generic_function = GenericFunction(function_declaration.head.generic, function_declaration, self.module)
+            self.module.functions[function_declaration.head.name] = generic_function
+
+            return generic_function
 
         function_declaration.head.parameters = [(parameter_name, self.module.import_type(parameter_hint)) for parameter_name, parameter_hint in function_declaration.head.parameters]
         function_declaration.head.return_hint = self.module.import_type(function_declaration.head.return_hint)
@@ -211,8 +200,13 @@ class Checker:
 
             return associated_function
 
-        # Now check its body
+        # Inject the parameters in checker variables
         checker = Checker(self.module, self.context.copy())
+
+        for parameter_name, parameter_type in function_declaration.head.parameters:
+            checker.context.variables[parameter_name] = parameter_type
+        
+        # Now check its body
         function_declaration.body = checker.check_body(function_declaration.body)
         
         function = Function(function_declaration)
