@@ -1,0 +1,20 @@
+import std.io
+
+struct Tag {
+    text: str
+}
+
+fun Tag.show(self: Tag) : str {
+}
+
+struct Book {
+    title: str
+    tag: Tag
+}
+
+
+fun main() : int {
+    let book = Book { "alice", Tag { "hello" } }
+
+    io.puts(book.tag.show())
+}
