@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = [
   { name="Marcel Guinhos de Menezes", email="mguinhos@gmail.com" },
 ]
-description = "A type checker for the gullian language"
+description = "A simple type checker for the gullian language"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

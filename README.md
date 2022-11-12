@@ -1,3 +1,3 @@
 # pygullian-checker
-A type checker for the gullian language
+A simple type checker for the gullian language
 [MIT License](./LICENSE)
