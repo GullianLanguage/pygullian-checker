@@ -117,7 +117,7 @@ class Checker:
         return Typed(CheckedCall(call, function), function.declaration.head.return_hint)
     
     # NOTE: May cause issues, it only works for variables
-    def check_attribute(self, attribute: Attribute):
+    def check_attribute(self, attribute: Attribute, *, allow_direct_union_field_acess=False):
         variable_type = self.context.import_variable(attribute.left)
         variable_type_fields = dict(variable_type.fields)
 
@@ -125,8 +125,10 @@ class Checker:
             raise NameError(f'{attribute.right.format} is not a field of type {variable_type.name.format}, at line {attribute.line}, in module {self.module.name}')
         
         if type(variable_type.declaration) is UnionDeclaration:
-            if attribute not in self.context.guards:
+            if not allow_direct_union_field_acess and attribute not in self.context.guards:
                 raise AttributeError(f"Acessing union field '{attribute.format}' directly is not allowed, you must check if its initialized first. at line {attribute.line}, in module {self.module.name}")
+        
+        attribute.left = Typed(attribute.left, variable_type)
 
         return Typed(attribute, variable_type_fields[attribute.right])
     
@@ -157,9 +159,11 @@ class Checker:
         raise NotImplementedError(f"bug(checker): checking for unary operator {unary_operator.format} is not implemented yet. at line {unary_operator.line}, in module {self.module.name}")
     
     def check_test_guard(self, test_guard: TestGuard):
+        test_guard.expression = self.check_expression(test_guard.expression, allow_direct_union_field_acess=True)
+        
         return Typed(test_guard, BOOL)
     
-    def check_expression(self, expression: Expression):
+    def check_expression(self, expression: Expression, *, allow_direct_union_field_acess=False):
         if type(expression) is Literal:
             if type(expression.value) is str:
                 return Typed(expression, STR)
@@ -176,7 +180,7 @@ class Checker:
             
             raise NameError(f"{expression.format} is not a variable. at line {expression.line}, in module {self.module.name}")
         elif type(expression) is Attribute:
-            return self.check_attribute(expression)
+            return self.check_attribute(expression, allow_direct_union_field_acess=allow_direct_union_field_acess)
         elif type(expression) is StructLiteral:
             return self.check_struct_literal(expression)
         elif type(expression) is Call:
@@ -203,7 +207,7 @@ class Checker:
         return variable_declaration
     
     def check_if(self, if_: If, expected_return_type: Type):
-        if_.condition = self.check_expression(if_.condition)
+        if_.condition = self.check_expression(if_.condition, allow_direct_union_field_acess=True)
 
         # Add guard
         if type(if_.condition.ast) is TestGuard:

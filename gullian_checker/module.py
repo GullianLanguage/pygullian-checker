@@ -65,10 +65,16 @@ class Type:
 
         return cls(name, dict(), dict(), dict(), declaration)
 
-@dataclass
+@dataclass(eq=False)
 class Typed:
     ast: Ast
     type: Type
+
+    def __hash__(self):
+        return hash(self.ast)
+    
+    def __eq__(self, ast: Ast):
+        return self.ast == ast
 
     @property
     def line(self):
