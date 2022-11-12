@@ -15,10 +15,8 @@ checker = Checker.new(module)
 for checked in checker.check(asts):
     print(checked)
 
-from pprint import pprint
-
 print('module:')
-pprint(module)
+print(module)
 print()
 print('context:')
-pprint(checker.context)
+print(checker.context)

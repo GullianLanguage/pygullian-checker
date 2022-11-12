@@ -57,17 +57,15 @@ class Checker:
 
         return Typed(call, function.declaration. head.return_hint)
     
+    # NOTE: May cause issues, it only works for variables
     def check_attribute(self, attribute: Attribute):
-        if attribute.left in self.context.variables:
-            variable_type = self.context.variables[attribute.left]
-            variable_type_fields = dict(variable_type.fields)
+        variable_type = self.context.import_variable(attribute.left)
+        variable_type_fields = dict(variable_type.fields)
 
-            if attribute.right not in variable_type_fields:
-                raise NameError(f'{attribute.right.format} is not a field of type {variable_type.name.format}, at line {attribute.line}, in module {self.module.name}')
+        if attribute.right not in variable_type_fields:
+            raise NameError(f'{attribute.right.format} is not a field of type {variable_type.name.format}, at line {attribute.line}, in module {self.module.name}')
 
-            return Typed(attribute, variable_type_fields[attribute.right])
-        
-        raise NotImplementedError(f"bug(checker): checking for {attribute.format} is not implemented yeat")
+        return Typed(attribute, variable_type_fields[attribute.right])
 
     def check_expression(self, expression: Expression):
         if type(expression) is Literal:

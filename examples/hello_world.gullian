@@ -1,5 +1,9 @@
 import std.io
 
+fun ptr.print(self: ptr[str]) : str {
+
+}
+
 struct Tag {
     text: str
     tag: ptr[str]
@@ -17,5 +21,5 @@ struct Book {
 fun main() : int {
     let book = Book { "alice", Tag { "hello", "world" } }
 
-    io.puts(book.tag.show())
+    io.puts(book.tag.tag.print())
 }
