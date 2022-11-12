@@ -1,4 +1,5 @@
 import std.io
+import std.sys
 
 fun int.to_string(self: int) : str {
 
@@ -10,9 +11,11 @@ union Result[T, E] {
 }
 
 fun Result.unwrap[T, E](self: Result[T, E]) : T {
-    if self.err? {
-        io.puts(self.err)
+    if self.ok? {
+        return self.ok
     }
+
+    sys.exit(-1)
 }
 
 fun divide(a: int, b: int) : Result[int, str] {
