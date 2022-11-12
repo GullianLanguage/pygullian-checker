@@ -94,6 +94,14 @@ class Checker:
             raise NameError(f'{attribute.right.format} is not a field of type {variable_type.name.format}, at line {attribute.line}, in module {self.module.name}')
 
         return Typed(attribute, variable_type_fields[attribute.right])
+    
+    def check_unary_operator(self, unary_operator: UnaryOperator):
+        unary_operator.expression = self.check_expression(unary_operator.expression)
+
+        if unary_operator.operator.kind is TokenKind.Ampersand:
+            return Typed(unary_operator, PTR)
+
+        raise NotImplementedError(f"bug(checker): checking for unary operator {unary_operator.format} is not implemented yet. at line {unary_operator.line}, in module {self.module.name}")
 
     def check_expression(self, expression: Expression):
         if type(expression) is Literal:
@@ -117,6 +125,8 @@ class Checker:
             return self.check_struct_literal(expression)
         elif type(expression) is Call:
             return self.check_call(expression)
+        elif type(expression) is UnaryOperator:
+            return self.check_unary_operator(expression)
         
         raise NotImplementedError(f"bug(checker): checking for {expression.format} is not implemented yet. at line {expression.line}, in module {self.module.name}")
     
