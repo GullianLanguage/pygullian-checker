@@ -1,8 +1,16 @@
 import std.io
 
+fun int.to_string(self: int) : str {
+
+}
+
 union Result[T, E] {
     ok: T,
     err: E
+}
+
+fun Result.unwrap[T, E](self: Result[T, E]) : T {
+    io.puts(self.err)
 }
 
 fun divide(a: int, b: int) : Result[int, str] {
@@ -15,4 +23,7 @@ fun divide(a: int, b: int) : Result[int, str] {
 
 fun main() : int {
     let result = divide(40, 60)
+    let ok = result.unwrap[int, str]()
+
+    io.puts(ok.to_string())
 }

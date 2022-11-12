@@ -125,7 +125,7 @@ class GenericFunction:
         declaration.head.generic = []
 
         checker = Checker.new(self.module)
-
+        
         return checker.check_function_declaration(declaration)
 
 @dataclass

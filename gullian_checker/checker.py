@@ -264,7 +264,7 @@ class Checker:
             # Check and assign the associated function
             if type(function_declaration.head.name) is Attribute:
                 associated_type = self.module.import_type(function_declaration.head.name.left)
-                associated_function = GenericFunction(function_declaration.head.generic, AssociatedFunction(associated_type, function_declaration), self.module)
+                associated_function = GenericFunction(function_declaration.head.generic, function_declaration, self.module)
                 
                 associated_type.functions[function_declaration.head.name.right] = associated_function
 
@@ -281,6 +281,17 @@ class Checker:
         # Check and assign the associated function
         if type(function_declaration.head.name) is Attribute:
             associated_type = self.module.import_type(function_declaration.head.name.left)
+
+            # Inject the parameters in checker variables
+            checker = Checker(self.module, self.context.copy())
+
+            for parameter_name, parameter_type in function_declaration.head.parameters:
+                checker.context.variables[parameter_name] = parameter_type
+            
+            # Now check its body
+            function_declaration.body = checker.check_body(function_declaration.body)
+
+            # And finnaly submit it back
             associated_function = AssociatedFunction(associated_type, function_declaration)
             associated_type.functions[function_declaration.head.name.right] = associated_function
 
@@ -295,6 +306,7 @@ class Checker:
         # Now check its body
         function_declaration.body = checker.check_body(function_declaration.body)
         
+        # And finnaly submit it back
         function = Function(function_declaration)
         self.module.functions[function_declaration.head.name] = function
 
