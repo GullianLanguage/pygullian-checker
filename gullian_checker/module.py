@@ -17,7 +17,7 @@ class Type:
         return f'Type({self.name})'
     
     def __hash__(self):
-        return hash((self.name, self.fields.values(), self.functions.values(), self.declaration))
+        return hash((self.name, self.declaration))
     
     def import_field(self, name: Name | Attribute):
         type_fields = dict(self.fields)
@@ -253,8 +253,10 @@ class Module:
             base_type = self.import_type(name.head)
 
             if type(base_type) is GenericType:
-                anonymous_type = base_type.apply_generic(tuple(self.import_type(item) for item in name.items))
-                self.anonymous_types[name] = anonymous_type
+                items = tuple(self.import_type(item) for item in name.items)
+                anonymous_type = base_type.apply_generic(items)
+
+                self.anonymous_types[Subscript(base_type.name, items)] = anonymous_type
 
                 return anonymous_type
 
