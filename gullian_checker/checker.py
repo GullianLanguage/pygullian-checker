@@ -175,7 +175,13 @@ class Checker:
     
     def check_variable_declaration(self, variable_declaration: VariableDeclaration):
         variable_declaration.value = self.check_expression(variable_declaration.value)
-        self.context.variables[variable_declaration.name.format] = variable_declaration.value.type
+        
+        if variable_declaration.hint is None:
+            variable_declaration.hint = variable_declaration.value.type
+        else:
+            variable_declaration.hint = self.module.import_type(variable_declaration.hint)
+        
+        self.context.variables[variable_declaration.name.format] = variable_declaration.hint
 
         return variable_declaration
     
